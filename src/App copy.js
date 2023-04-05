@@ -1,27 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import Todos from './components/Todos';
-import { createTodo, deleteTodo, editTodo, fetchTodos } from './features/todos/todoSlice';
+import { fetchTodos } from './features/todos/todoSlice';
 import { useDispatch, useSelector } from 'react-redux';
 
 
 
 function App() {
   const dispatch = useDispatch();
-  // const [todos,setTodos] = useState([])
+  const [todos,setTodos] = useState([])
   const [title,setTitle] = useState('')
   const [titleEdit,setTitleEdit] = useState('')
   const [editId,setEditId] = useState()
   
-    const { todos, isLoading, isError, error } = useSelector(
-        (state) => state.todos
-    );
+    // const { todos, isLoading, isError, error } = useSelector(
+    //     (state) => state.todos
+    // );
 
   useEffect(()=>{
     dispatch(fetchTodos())
+    let getTodos = JSON.parse(localStorage.getItem("todos"));
+
+    if(getTodos){
+      setTodos(getTodos)
+    }
   },[])
 
   const handleDelete = (id) =>{
-    dispatch(deleteTodo(id))
+    let filter = todos.filter((todo)=>todo.id !== id)
+    setTodos(filter)
+    // console.log(id)
+    localStorage.setItem("todos", JSON.stringify(filter));
   }
 
   const handleEdit = (todo) =>{
@@ -36,25 +44,64 @@ function App() {
      if(!title){
       return false
      }
-     dispatch(createTodo(title)) 
+     let uniqueId = new Date().getTime().toString().slice(-4)
+    //  let creteStr= uniqueId
+     setTodos((prev)=>{
+      let update = [...prev,
+        {
+          userId:1,
+          id:uniqueId,
+          title,
+          completed:false,
+        }
+      ]
+      localStorage.setItem("todos", JSON.stringify(update));
+
+      return update;
+
+     })
+    
     setTitle('')
   }
 
   const editSubmit = (e)=>{
+    // setTitle(e.target.value)
     if(e.keyCode === 13){
-      dispatch(editTodo({id:editId,title:titleEdit}))
+      let update = todos.map((todo)=>{
+        if(todo.id === editId){
+          return {
+            ...todo,
+            title:titleEdit
+          }
+        }
+        return todo
+      })
+
       setTitleEdit('')
       setEditId(null)
+      setTodos(update)
+      localStorage.setItem("todos", JSON.stringify(update));
     }
     
   }
 
   const handleOnBlur = () => {
-    dispatch(editTodo({id:editId,title:titleEdit}))
+    let update = todos.map((todo)=>{
+      if(todo.id === editId){
+        return {
+          ...todo,
+          title:titleEdit
+        }
+      }
+      return todo
+    })
+
     setTitleEdit('')
     setEditId(null)
+    setTodos(update)
   }
-  
+
+  console.log(todos)
   return (
     <div className="App">
       <div className='container w-2/4 mx-auto flex justify-center items-center h-full mt-24'>
@@ -91,7 +138,7 @@ function App() {
         ))
       }
       </div>
-      </div>
+    </div>
     </div>
   );
 }
